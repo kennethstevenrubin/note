@@ -1,0 +1,252 @@
+<html>
+<head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>ABC</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+
+            try {
+
+                // Get the gateway service port from hosting node web service before doing anything else.
+                const gatewayServicePortResponse = await fetch("/gatewayServicePort", {
+
+                    method: "GET",
+                    headers: {
+
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const gatewayServicePortData = await gatewayServicePortResponse.json();
+                const gatewayServicePort = gatewayServicePortData.gatewayServicePort;
+
+                const getNotes = async () => {
+
+                    try {
+
+                        const getResponse = await fetch(`http://localhost:${gatewayServicePort}/note/v1/getNotes`, {
+
+                            method: "GET",
+                            headers: {
+
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        const getData = await getResponse.json();
+
+                        const itemsDiv = document.getElementById("items");
+                        itemsDiv.innerHTML = "items";
+                        getData.forEach((item) => {
+
+                            const childDiv = document.createElement("div");
+                            childDiv.innerText = JSON.stringify(item);
+                            itemsDiv.append(childDiv);
+                        });
+                    } catch (x) {
+
+                        alert("get error: " + x.message);
+                    }
+                };
+
+                const addNote = async () => {
+
+                    try {
+
+                        const titleInput = document.getElementById("edit_title");
+                        const bodyInput = document.getElementById("edit_body");
+                        const insertResponse = await fetch(`http://localhost:${gatewayServicePort}/note/v1/createNote`, {
+
+                            method: "POST",
+                            headers: {
+
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+
+                                "id": 0,
+                                "title": titleInput.value,
+                                "body": bodyInput.value
+                            })
+                        });
+                        const insertData = await insertResponse.json();
+
+                        if (insertData.status && insertData.status !== 200) {
+
+                            alert(insertData.error);
+                        } else {
+
+                            if (insertData === 0) {
+
+                                alert("insert error: failed to insert note");
+                            }
+                            getNotes();
+                        }
+                    } catch (x) {
+
+                        alert("insert error: " + x.message);
+                    }
+                };
+
+                const updateNote = async () => {
+
+                    try {
+
+                        const idInput = document.getElementById("edit_id");
+                        const titleInput = document.getElementById("edit_title");
+                        const bodyInput = document.getElementById("edit_body");
+                        const updateResponse = await fetch(`http://localhost:${gatewayServicePort}/note/v1/updateNote`, {
+
+                            method: "PUT",
+                            headers: {
+
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+
+                                "id": idInput.value,
+                                "title": titleInput.value,
+                                "body": bodyInput.value
+                            })
+                        });
+                        const updateData = await updateResponse.json();
+
+                        if (updateData.status && updateData.status !== 200) {
+
+                            alert(updateData.error);
+                        } else {
+
+                            if (updateData !== 1) {
+
+                                alert("update error: failed to update note");
+                            }
+                            getNotes();
+                        }
+                    } catch (x) {
+
+                        alert("update error: " + x.message);
+                    }
+                };
+
+                const deleteNote = async () => {
+
+                    try {
+
+                        const idInput = document.getElementById("edit_id");
+                        const deleteResponse = await fetch(`http://localhost:${gatewayServicePort}/note/v1/deleteNote`, {
+
+                            method: "DELETE",
+                            headers: {
+
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+
+                                "id": idInput.value,
+                                "title": "",
+                                "body": ""
+                            })
+                        });
+                        const deleteData = await deleteResponse.json();
+
+                        if (deleteData.status && deleteData.status !== 200) {
+
+                            alert(deleteData.error);
+                        } else {
+
+                            if (deleteData !== 1) {
+
+                                alert("delete error: failed to delete note");
+                            }
+                            getNotes();
+                        }
+                    } catch (x) {
+
+                        alert("delete error: " + x.message);
+                    }
+                };
+
+                const addButton = document.getElementById("add_button");
+                addButton.addEventListener('click', addNote);
+                const updateButton = document.getElementById("update_button");
+                updateButton.addEventListener('click', updateNote);
+                const deleteButton = document.getElementById("delete_button");
+                deleteButton.addEventListener('click', deleteNote);
+
+                getNotes();
+            } catch (x) {
+
+                alert("error: " + x.message);
+            }
+        });
+    </script>
+    <style>
+        * {
+
+            padding: 0px;
+            margin: 0px;
+            box-sizing:content-box;
+            overflow: hidden;
+        }
+        body {
+
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: stretch;
+        }
+        div {
+
+            display: flex;
+            flex: 0 0 auto;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: stretch;
+            background: rgba(0, 0, 0, 0.1);
+            margin: 4px;
+            padding: 4px;
+            border: 1px solid black;
+            border-radius: 2px;
+        }
+        span {
+
+            flex: 0 0 auto;
+            display: inline-block;
+            margin: 4px;
+        }
+        button {
+
+            flex: 0 0 auto;
+            align-self: flex-start;
+            padding: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="items">
+        items
+    </div>
+    <div id="add">
+        
+        <span>
+            id
+            <input id="edit_id" type="number"/>
+        </span>
+        <span>
+            title
+            <input id="edit_title"/>
+        </span>
+        <span>
+            body
+            <input id="edit_body" />
+        </span>
+        <span>
+            <button id="add_button">add</button>
+            <button id="update_button">update</button>
+            <button id="delete_button">delete</button>
+        </span>
+    </div>
+</body>
+</html>

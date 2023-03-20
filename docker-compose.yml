@@ -1,0 +1,148 @@
+version: '3.7'
+
+services:
+  database:
+    image: postgres:latest
+    container_name: local-psql
+    ports: ["${DATABASE_PORT}:${DATABASE_PORT}"]
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "Abcdefghijklm1"
+      POSTGRES_DB: "postgres"
+    volumes: [local_psql_data:/var/lib/postgresql/data]
+    networks:
+      backend:
+        aliases: ["database"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  discoveryservice:
+    image: note/discovery-service:0.0.1
+    ports: ["${DISCOVERYSERVICE_PORT}:${DISCOVERYSERVICE_PORT}"]
+    networks:
+      backend:
+        aliases: ["discoveryservice"]
+    environment:
+      - "server.port=${DISCOVERYSERVICE_PORT}"
+    healthcheck:
+      test: "curl --fail --silent discoveryservice:${DISCOVERYSERVICE_PORT}/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 9s
+      retries: 5
+      start_period: 20s
+
+  gatewayservice:
+    image: note/gateway-service:0.0.1
+    ports: ["${GATEWAYSERVICE_PORT}:${GATEWAYSERVICE_PORT}"]
+    networks:
+      backend:
+        aliases: ["gatewayservice"]
+    depends_on:
+      discoveryservice:
+        condition: service_healthy
+    environment:
+      - "server.port=${GATEWAYSERVICE_PORT}"
+      - "eureka.client.serviceUrl.defaultZone=http://discoveryservice:${DISCOVERYSERVICE_PORT}/eureka"
+    healthcheck:
+      test: "curl --fail --silent gatewayservice:${GATEWAYSERVICE_PORT}/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 9s
+      retries: 5
+      start_period: 20s
+
+  noteservice:
+    image: note/note-service:0.0.1
+    ports: ["${NOTESERVICE_PORT}:${NOTESERVICE_PORT}"]
+    environment:
+      - "server.port=${NOTESERVICE_PORT}"
+      - "eureka.client.serviceUrl.defaultZone=http://discoveryservice:${DISCOVERYSERVICE_PORT}/eureka"
+      - "datasource.postgres.url=jdbc:postgresql://database:${DATABASE_PORT}/postgres"
+      - "datasource.sally.url=jdbc:postgresql://database:${DATABASE_PORT}/sally"
+    depends_on:
+      gatewayservice:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+    networks:
+      backend:
+        aliases: ["noteservice"]
+    healthcheck:
+      test: "curl --fail --silent noteservice:${NOTESERVICE_PORT}/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 9s
+      retries: 5
+      start_period: 20s
+
+  noteservice2:
+    image: note/note-service:0.0.1
+    ports: ["${NOTESERVICE2_PORT}:${NOTESERVICE2_PORT}"]
+    environment:
+      - "server.port=${NOTESERVICE2_PORT}"
+      - "eureka.client.serviceUrl.defaultZone=http://discoveryservice:${DISCOVERYSERVICE_PORT}/eureka"
+      - "datasource.postgres.url=jdbc:postgresql://database:${DATABASE_PORT}/postgres"
+      - "datasource.sally.url=jdbc:postgresql://database:${DATABASE_PORT}/sally"
+    depends_on:
+      gatewayservice:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+    networks:
+      backend:
+        aliases: ["noteservice2"]
+    healthcheck:
+      test: "curl --fail --silent noteservice2:${NOTESERVICE2_PORT}/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 9s
+      retries: 5
+      start_period: 20s
+
+  noteservice3:
+    image: note/note-service:0.0.1
+    ports: ["${NOTESERVICE3_PORT}:${NOTESERVICE3_PORT}"]
+    environment:
+      - "server.port=${NOTESERVICE3_PORT}"
+      - "eureka.client.serviceUrl.defaultZone=http://discoveryservice:${DISCOVERYSERVICE_PORT}/eureka"
+      - "datasource.postgres.url=jdbc:postgresql://database:${DATABASE_PORT}/postgres"
+      - "datasource.sally.url=jdbc:postgresql://database:${DATABASE_PORT}/sally"
+    depends_on:
+      gatewayservice:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+    networks:
+      backend:
+        aliases: ["noteservice3"]
+    healthcheck:
+      test: "curl --fail --silent noteservice3:${NOTESERVICE3_PORT}/actuator/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 9s
+      retries: 5
+      start_period: 20s
+
+  noteweb:
+    image: note/note-web:0.0.1
+    ports: ["${NOTEWEB_PORT}:${NOTEWEB_PORT}"]
+    depends_on:
+      noteservice:
+        condition: service_healthy
+      noteservice2:
+        condition: service_healthy
+      noteservice3:
+        condition: service_healthy
+    environment:
+      - "NOTEWEB_PORT=${NOTEWEB_PORT}"
+      - "GATEWAYSERVICE_PORT=${GATEWAYSERVICE_PORT}"
+    networks:
+      backend:
+        aliases: ["noteweb"]
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  local_psql_data:
+    driver: local

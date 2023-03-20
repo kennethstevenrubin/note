@@ -1,0 +1,47 @@
+=================================
+notes:
+
+to build spring boot projects:
+- cd into root folder for project
+- mvn clean package
+
+to run spring boot projects:
+- cd into root folder for project
+- java -jar target/[jar file] {--server.port=...}
+
+to run node web server project:
+- cd into root folder for project
+- npm start
+
+to build docker image for spring boot projects:
+- cd into root folder for project
+- mvn clean package dockerfile:build
+
+to build docker image for node web:
+- cd into root folder for project
+- docker build . -t note/note-web:0.0.1
+
+to start Postgresql docker image:
+- docker run --name local-psql -v local_psql_data:/var/lib/postgresql/data -p 5432:5432 -e POSTGRES_PASSWORD=Abcdefghijklm1 -d postgres
+
+to kill application listening on port:
+- kill -9 $(lsof -ti:8080)
+
+
+
+
+
+=================================
+TODO:
+
+resolve precedence issue with docker compose file vs config server properties
+
+add everything to github
+
+move into kubernetes
+
+spring security
+
+logging
+
+monitoring

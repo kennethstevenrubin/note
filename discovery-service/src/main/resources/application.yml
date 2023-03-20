@@ -1,0 +1,19 @@
+server:
+  port: 8761
+spring:
+  application:
+    name: discovery-service
+  profiles:
+    active: default
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+  instance:
+    lease-renewal-interval-in-seconds: 0
+logging:
+  level:
+    com:
+      netflix:
+        eureka: OFF
+        discovery: OFF
